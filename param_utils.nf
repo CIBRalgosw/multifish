@@ -22,7 +22,7 @@ def default_mf_params() {
         skip: '', // do not skip anything by default
 
         // download params
-        downloader_container: 'multifish/downloader:1.1.0',
+        downloader_container: multifish_container_repo+'/downloader:1.1.0',
         data_manifest: 'segmentation',
         verify_md5: 'true',
 
@@ -41,6 +41,7 @@ def default_mf_params() {
         stitching_padding: '0,0,0',
         stitching_blur_sigma: '2',
         stitching_czi_pattern: '', // A suffix pattern that is applied to acq_names when creating CZI names e.g. "_V%02d"
+        flatfield_correction: true,
         workers: 6,
         worker_cores: 8,
         gb_per_core: 15,
@@ -84,6 +85,14 @@ def default_mf_params() {
         rsfish_sigma: 1.5,
         rsfish_threshold: 0.007,
         rsfish_params: '',
+        // RS-Fish parameters adjustable per channel
+        per_channel: [
+            rsfish_min: '',
+            rsfish_max: '',
+            rsfish_anisotropy: '',
+            rsfish_sigma: '',
+            rsfish_threshold: '',
+        ],
 
         // segmentation params
         segmentation_output: 'segmentation',
@@ -174,14 +183,25 @@ def get_value_or_default(Map ps, String param, String default_value) {
 }
 
 def get_list_or_default(Map ps, String param, List default_list) {
-    def value
-    if (ps[param])
-        value = ps[param]
-    else
-        value = null
-    return value
-        ? value.tokenize(',').collect { it.trim() }
-        : default_list
+    def source_value = ps[param]
+
+    if (source_value == null) {
+        return default_list
+    } else if (source_value instanceof Boolean) {
+        // most likely the parameter was set as '--param'
+        // followed by no value
+        return default_list
+    } else if (source_value instanceof String) {
+        if (source_value.trim() == '') {
+            return default_list
+        } else {
+            return source_value.tokenize(',').collect { it.trim() }
+        }
+    } else {
+        // this is the case in which a parameter was set to a numeric value,
+        // e.g., "--param 1000" or "--param 20.3"
+        return [source_value]
+    }
 }
 
 def stitching_container_param(Map ps) {
@@ -211,7 +231,7 @@ def segmentation_container_param(Map ps) {
 def registration_container_param(Map ps) {
     def registration_container = ps.registration_container
     if (!registration_container)
-        "${ps.mfrepo}/registration:1.2.1"
+        "${ps.mfrepo}/registration:1.2.3"
     else
         registration_container
 }

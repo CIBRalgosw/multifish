@@ -52,6 +52,7 @@ Stitching options
 |`resolution`|Voxel resolution in all 3 dimensions. Default: 0.23,0.23,0.42|This is a comma-delimited tuple as x,y,z.|`string`
 |`axis`|Axis mapping for the objective->pixel coordinates conversion. Default: -x,y,z|Comma-separated axis specification with optional flips.|`string`
 |`stitching_block_size`|Block size to use when converting CZI to n5 before stitching. Default: 128,128,64||`string`
+|`flatfield_correction`|Apply flatfield correction before stitching? Default: true||`boolean`
 |`retile_z_size`|Block size (in Z dimension) when retiling after stitching. Default: 64|This must be smaller than the number of Z slices in the data.|`integer`
 |`stitching_mode`|Rematching mode ('full' or 'incremental'). Default: incremental||`string`
 |`stitching_padding`|Padding for the overlap regions. Default: 0,0,0||`string`
@@ -155,6 +156,22 @@ Options for the RS-FISH spot extraction algorithm
 |`rsfish_gb_per_core`|Size of memory (in GB) that is allocated for each core of a RS-FISH Spark worker. Default: 4|The total memory usage for one acquisition will be workers *worker_cores* gb_per_core.|`integer`
 |`rsfish_driver_cores`|Number of cores allocated for the RS-FISH Spark driver. Default: 1||`string`
 |`rsfish_driver_memory`|Amount of memory to allocate for the RS-FISH Spark driver. Default: 15g||`string`
+
+### Per channel RS-FISH Parameters
+
+The following parameters can be set per channel: `rsfish_min`, `rsfish_max`, `rsfish_anisotropy`, `rsfish_sigma`, `rsfish_threshold`. For that simply prefix the corresponding parameter with `--per_channel.` and set the values using a comma delimited list. The values will be associated with the corresponding channel based on their position, i.e. first value will be associated with the first channel, second with the second channel, etc. If a value is missing or empty the parameter value for the channel will be set to the default from the parameter with the same name (presented above).
+
+For example if the command like is:
+`--channels c0,c1,c2,c3 --sigma 1.7 --per_channel.sigma "1.2,,1.4`
+
+channel c0 will use sigma 1.2
+
+channel c1 will use the default sigma 1.7 (because of the empty value)
+
+channel c2 will use sigma 1.4
+
+channel c3 will use the default sigma 1.7 (because of the missing value - sigma values list is shorter then the channels list)
+
 
 ## Spot Warping
 

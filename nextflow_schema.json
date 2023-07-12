@@ -150,6 +150,11 @@
                     "pattern": "^\\d+,\\d+,\\d+$",
                     "description": "Block size to use when converting CZI to n5 before stitching. Default: 128,128,64"
                 },
+                "flatfield_correction": {
+                    "type": "boolean",
+                    "fa_icon": "fas fa-cube",
+                    "description": "Apply flatfield correction before stitching? Default: true"
+                },
                 "retile_z_size": {
                     "type": "integer",
                     "fa_icon": "far fa-square",
@@ -483,7 +488,7 @@
                     "description": "Number of CPU cores to allocate for each AirLocalize job. Default: 1"
                 },
                 "airlocalize_memory": {
-                    "type": "integer",
+                    "type": "string",
                     "fa_icon": "fas fa-memory",
                     "description": "Amount of RAM to allocate to each AirLocalize job. Needs to be increased when increasing strides. Default: 2 G"
                 }

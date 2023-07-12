@@ -108,6 +108,7 @@ steps_to_skip = get_list_or_default(final_params, 'skip', [])
 // than 'acq_names' parameter set 'stitch_acq_names' parameter
 acq_names = get_list_or_default(final_params, 'acq_names', [])
 ref_acq = final_params.ref_acq
+channels = get_list_or_default(final_params, 'channels',[])
 
 log.info """
     ===================================
@@ -124,6 +125,7 @@ log.info """
     output_dir             : ${pipeline_output_dir}
     publish_dir            : ${final_params.publish_dir}
     acq_names              : ${acq_names}
+    channels               : ${channels}
     ref_acq                : ${ref_acq}
     steps_to_skip          : ${steps_to_skip}
     """
@@ -136,7 +138,6 @@ if (steps_to_skip.contains('stitching')) {
 }
 log.debug "Images to stitch: ${stitch_acq_names}"
 
-channels = final_params.channels?.split(',')
 stitching_block_size = final_params.stitching_block_size
 retile_z_size = final_params.retile_z_size
 stitching_ref = stitching_ref_param(final_params)
@@ -515,7 +516,7 @@ workflow {
             it[4], // fixed subpath
             it[0], // moving
             it[2], // moving subpath
-            it[5], // transform subpath
+            it[5], // inv transform subpath
             "${it[6]}/${warped_spots_fname}", // warped spots file
             "${spots_file}" // spots file path (as string)
         ]
@@ -576,7 +577,7 @@ workflow {
             get_acq_output(pipeline_output_dir, moving_acq),
             "${final_params.registration_output}/${moving_acq}-to-${fixed_acq}"
         )
-        [
+        def r = [
             "${fixed_dir}/export.n5", // fixed stitched image
             "/${ch}/${final_params.def_scale}", // channel/deform scale
             "${moving_dir}/export.n5", // moving stitched image
@@ -589,6 +590,8 @@ workflow {
             fixed_acq,
             moving_acq
         ]
+        log.debug "Measure intensities input candidate: $it -> $r"
+        r
     }
 
     def intensities_inputs_for_fixed = expected_registrations_for_intensities
@@ -642,18 +645,27 @@ workflow {
             "${final_params.measure_intensities_output}/${intensities_name}"
         )
         log.debug "Measure intensities output for ${moving_acq} to ${fixed_acq} -> ${measure_intensities_output_dir}"
+        if (it[8] != final_params.segmentation_scale) {
+            log.warn "Warped image and labels must have the same shape so deform and segmentation scale should be the same"
+        }
         def r = [
             it[9], // labels
             it[6], // warped spots image
             intensities_name, // intensity measurements result file prefix (round name)
             it[7], // channel
-            it[8], // scale
+            final_params.segmentation_scale, // scale - must be same as segmentation scale
             measure_intensities_output_dir // result output dir
         ]
         log.debug "Measure intensities inputs for moving image $it -> $r"
         r
-    } | concat(intensities_inputs_for_fixed) | unique {
+    }
+    | concat(intensities_inputs_for_fixed)
+    | unique {
         [ "${it[0]}", "${it[1]}", "${it[3]}", "${it[4]}" ]
+    }
+    | filter {
+        // if skipping measure_intensities - filter out everything
+        !steps_to_skip.contains('measure_intensities')
     }
 
     // run intensities measurements
