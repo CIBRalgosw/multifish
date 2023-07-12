@@ -46,7 +46,7 @@ def default_mf_params() {
         gb_per_core: 15,
         driver_memory: '2g',
         wait_for_spark_timeout_seconds: 7200,
-        sleep_between_timeout_checks_seconds: 20,
+        sleep_between_timeout_checks_seconds: 10,
 
         dapi_channel: 'c2', // DAPI channel used to drive both the segmentation and the registration
         ref_acq: '', // this is the default parameter for the fixed round and 

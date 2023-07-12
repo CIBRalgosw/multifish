@@ -11,7 +11,7 @@ filelist=$@
 for f in ${filelist}; do
 
     echo "Checking for $f"
-    SECONDS=120
+    SECONDS=0
 
     while ! test -e "$f"; do
         sleep $SLEEP_SECS
